@@ -8,9 +8,7 @@
 
 
 #include "src/Joystick.h"   // Joystick and FFB Library (many changes made) by https://github.com/jmriego/Fino
-/* #include <LiquidCrystal_I2C.h> */
 
-#include <LiquidCrystal.h>  // https://www.arduino.cc/reference/en/libraries/liquidcrystal/
 #include <Encoder.h>        // Encoder Library https://github.com/PaulStoffregen/Encoder
 #include <EEPROM.h>         // https://docs.arduino.cc/learn/built-in-libraries/eeprom
 
@@ -60,8 +58,6 @@ Joystick_ Joystick(                     // define Joystick parameters
   false, false, false,                  // Rx, Ry, Rz
   false, false);                        // rudder, throttle
 
-/* LiquidCrystal_I2C lcd(0x27,  20, 4); */
-LiquidCrystal lcd(12, 7, A0, A1, A2, A3); // init library for lcd display
 Encoder counterRoll(0, 1);                // init encoder library for roll ir sensor
 Encoder counterPitch(2, 3);               // init encoder library for pitch ir sensor
 
@@ -74,15 +70,6 @@ void setup() {
   setupJoystick();                  // Joystick setup
 
   Serial.begin(SERIAL_BAUD);        // init serial
-
-  lcd.begin(20 , 4);                // start lcd display
-
-  /* lcd.init();                // start lcd display */
-  /* lcd.backlight(); */
-  LcdPrintIntro();                  // show intro to lcd display
-  /* delay(1000);                      // wait */
-  Serial.println("start");
-  /* LcdPrintAdjustmendValues();       // show adjusted parameters */
  
   EnableMotors();                   // enable motors
 } //setup
@@ -92,13 +79,13 @@ void setup() {
 ****************************/
 void loop() {
 
-  /* Serial.println(counterPitch.read()); */
-  currentMillis = millis();                                           // number of milliseconds passed since the Arduino board began running the current program
+  /* Serial.print(counterPitch.read()); */
+  /* Serial.print(" "); */
   /* Serial.println(counterRoll.read()); */
+  currentMillis = millis();                                           // number of milliseconds passed since the Arduino board began running the current program
     
   //ReadMux();                                                          // Read values of buttons and end switch sensors (except yoke axes)
   if (currentMillis >= nextJoystickMillis) {                          // do not run more frequently than these many milliseconds, the window system needs time to process
-    /* LcdPrintPosition(); // @TODO remove */
     CheckCalibrationMode();                                           // check if calibration button was pressed an do it
     //UpdateJoystickButtons();                                          // set Joystick buttons
     Joystick.sendState();                                             // send joystick values to system
@@ -114,6 +101,6 @@ void loop() {
     DriveMotors();                                                     // move motors
     nextJoystickMillis = currentMillis + 20;                           // set time for new joystick loop
 
-    SerialEvent();                                                     // check if serial event received
+    SerialEvent();
   } //nextJoystickMillis
 } // loop

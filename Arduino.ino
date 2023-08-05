@@ -1,3 +1,6 @@
+#define CALIBRATION_PWM 32
+#define CALIBRATION_SAMPLE_TIME 200
+
 // Pitch Motordriver pins
 #define PITCH_EN 11
 #define PITCH_R_PWM 6
@@ -25,7 +28,6 @@
 #define ADJ_ENDSWITCH_PITCH_UP 19
 #define ADJ_ENDSWITCH_ROLL_LEFT 20 
 #define ADJ_ENDSWITCH_ROLL_RIGHT 21
-#define ADJ_BUTTON_CALIBRATION 22
 
 // If you use center sensor use 
 // RES_1 connector for Roll Roll Sensor
@@ -35,13 +37,6 @@
 /*   #define ADJ_MIDDLESWITCH_PITCH 6 */
 /* #endif */
 
-// variables for Speed calculation
-byte roll_speed = 0;
-byte pitch_speed = 0;
-
-// variables for button pin states
-/* uint16_t iYokeButtonPinStates = 0; */
-/* uint16_t iSensorPinStates = 0; */
 
 /***************
   Pin setup
@@ -63,7 +58,6 @@ void ArduinoSetup()
   pinMode(ADJ_ENDSWITCH_PITCH_UP, INPUT);
   pinMode(ADJ_ENDSWITCH_ROLL_LEFT, INPUT);
   pinMode(ADJ_ENDSWITCH_ROLL_RIGHT, INPUT);
-  pinMode(ADJ_BUTTON_CALIBRATION, INPUT_PULLUP);
 
 
   // define pin default states
@@ -103,200 +97,128 @@ void DisableMotors() {
 
   analogWrite(ROLL_L_PWM, 0);  // stop left
   analogWrite(ROLL_R_PWM, 0);  // stop right
-  roll_speed = 0;              // speed to 0
 
   analogWrite(PITCH_L_PWM, 0);  // stop left
   analogWrite(PITCH_R_PWM, 0);  // stop right
-  pitch_speed = 0;              // speed to 0
 } //DisableMotors
 
 /******************************************************
   calculates the motor speeds and controls the motors
 ******************************************************/
 void DriveMotors() {
-  // calculate motor speed for pitch direction
-  CalculateSpeed(pitch_speed,
-                 digitalRead(ADJ_ENDSWITCH_PITCH_DOWN),
-                 digitalRead(ADJ_ENDSWITCH_PITCH_UP),
-                 PITCH_R_PWM,
-                 PITCH_L_PWM,
-                 forces[MEM_PITCH],
-                 adjForceMax[MEM_PITCH],
-                 adjPwmMin[MEM_PITCH],
-                 adjPwmMax[MEM_PITCH]);
+  DriveMotor(PITCH_R_PWM,
+             PITCH_L_PWM,
+             forces[MEM_PITCH] < 0,
+             ForceToPwm(forces[MEM_PITCH],
+                        adjForceMax[MEM_PITCH],
+                        adjPwmMin[MEM_PITCH],
+                        adjPwmMax[MEM_PITCH])
+             );
+  DriveMotor(ROLL_L_PWM,
+             ROLL_R_PWM,
+             forces[MEM_ROLL] < 0,
+             ForceToPwm(forces[MEM_ROLL],
+                        adjForceMax[MEM_ROLL],
+                        adjPwmMin[MEM_ROLL],
+                        adjPwmMax[MEM_ROLL])
+             );
+}
 
-  // calculate motor speed for roll direction
-  CalculateSpeed(roll_speed,
-                 digitalRead(ADJ_ENDSWITCH_ROLL_LEFT),
-                 digitalRead(ADJ_ENDSWITCH_ROLL_RIGHT),
-                 ROLL_L_PWM,
-                 ROLL_R_PWM,
-                 forces[MEM_ROLL],
-                 adjForceMax[MEM_ROLL],
-                 adjPwmMin[MEM_ROLL],
-                 adjPwmMax[MEM_ROLL]);
-} //DriveMotors
+
+int ForceToPwm(int16_t gForce, int forceMax, byte pwmMin, byte pwmMax)
+{
+  int pForce = constrain(abs(gForce), 0, forceMax);
+
+  if (pForce == 0) {
+    return 0;
+  }
+
+  return map(pForce, 0, forceMax, pwmMin, pwmMax);
+} //ForceToPwm
 
 /******************************************************
   calculates the motor speeds
 ******************************************************/
-int CalculateSpeed(byte &rSpeed,
-                   bool blEndswitchDown,
-                   bool blEndswitchUp,
-                   byte pinLPWM,
-                   byte pinRPWM,
-                   int16_t gForce,
-                   int forceMax,
-                   byte pwmMin,
-                   byte pwmMax)
+int DriveMotor(byte pinLPWM,
+                byte pinRPWM,
+                bool leftDirection,
+                int pwm)
 {
-  // if position is on end switch then stop the motor
-  /* if (blEndswitchDown == 0 || blEndswitchUp == 0) */
-  /* { */
-  /*   analogWrite(pinLPWM, 0);  // stop left */
-  /*   analogWrite(pinRPWM, 0);  // stop right */
-  /*   rSpeed = 0;              // speed to 0 */
-  /* } */
-  /* else { */
-    // cut force to maximum value
-    int pForce = constrain(abs(gForce), 0, forceMax);
-    // calculate motor speed (pwm) by force between min pwm and max pwm speed
-    if (pForce == 0) {
-      analogWrite(pinRPWM, 0);  // stop right
-      analogWrite(pinLPWM, 0);  // stop left
-      return;
-    }
-    rSpeed = map(pForce, 0, forceMax, pwmMin, pwmMax);
-
-    // which direction?
-    if (gForce > 0) {
-      analogWrite(pinRPWM, 0);       // stop right
-      analogWrite(pinLPWM, rSpeed);  // speed up left
-    }
-    else {
-      analogWrite(pinLPWM, 0);       // stop left
-      analogWrite(pinRPWM, rSpeed);  // speed up right
-    }
-  /* } */
+  Serial.print("Setting force to: ");
+  Serial.println(pwm);
+  // which direction?
+  if (leftDirection) {
+    analogWrite(pinRPWM, 0);
+    analogWrite(pinLPWM, pwm);
+  }
+  else {
+    analogWrite(pinLPWM, 0);
+    analogWrite(pinRPWM, pwm);
+  }
 } //CalculateSpeed
+
+
+void CalibrateAxisOneDirection(byte pinLPWM,
+                                byte pinRPWM,
+                                bool leftDirection,
+                                int &endstopValue,
+                                byte pinEndstop,
+                                Encoder &counter
+                                )
+{
+  EnableMotors();
+  DriveMotor(pinLPWM, pinRPWM, leftDirection, CALIBRATION_PWM);
+  unsigned long currentMillis;
+  unsigned long nextSampleMillis = millis() + 500; // some time to let it start the motion
+  int lastCounterValue = -32768;
+
+  while (endstopValue == -32768) {
+    currentMillis = millis();
+
+    if (currentMillis >= nextSampleMillis) {
+      nextSampleMillis = currentMillis + CALIBRATION_SAMPLE_TIME;
+      if (lastCounterValue == counter.read()) {
+        endstopValue = counter.read();
+        DisableMotors();
+      }
+
+      lastCounterValue = counter.read();
+    }
+  }
+}
 
 /******************************************************
   Calibration
 ******************************************************/
 void CheckCalibrationMode() {
-  // is calibration button pressed or system started
-  if (digitalRead(ADJ_BUTTON_CALIBRATION) == LOW || blStart == true) {
-    // read again for debouncing button, not needed for start
-    if (blStart == false)
-    {
-      while (digitalRead(ADJ_BUTTON_CALIBRATION) == LOW) {
-        delay(1);
-        //ReadMux();
-      }
-    } else {
-      blStart = false;
-    }
+  if (blStart == false) {
+    return;
+  }
 
-    // maximum and minimum counter values for roll
-    int poti_roll_min = -32768;                             //counter min for Init;
-    int poti_roll_max = -32768;                             //counter max for Init;
+  blStart = false;
 
-    // maximum and minimum counter values for pitch
-    int poti_pitch_min = -32768;                             //counter min for Init;
-    int poti_pitch_max = -32768;                            //counter max for Init;
+  int poti_roll_min = -32768;                             //counter min for Init;
+  int poti_roll_max = -32768;                             //counter max for Init;
+  int poti_pitch_min = -32768;                             //counter min for Init;
+  int poti_pitch_max = -32768;                            //counter max for Init;
 
-    // dsiable motor
-    DisableMotors();
-
-    // Print message to display for center position
-    LcdPrintCalibrationMiddle();
-
-    // wait for button press to measure center
-    while (digitalRead(ADJ_BUTTON_CALIBRATION) == HIGH) {
-      delay(1);
-      //ReadMux();
-    }
-    // reset counters to zero
-    counterRoll.readAndReset();
-    counterPitch.readAndReset();
+  DisableMotors();
 
 
-    // small wait; not really needed but nicer in behavior
-    // delay(500);
+  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, false, poti_pitch_min, ADJ_ENDSWITCH_PITCH_DOWN, counterPitch);
+  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, true, poti_pitch_max, ADJ_ENDSWITCH_PITCH_UP, counterPitch);
+  CalibrateAxisOneDirection(ROLL_L_PWM, ROLL_R_PWM, true, poti_roll_min, ADJ_ENDSWITCH_ROLL_LEFT, counterRoll);
+  CalibrateAxisOneDirection(ROLL_L_PWM, ROLL_R_PWM, false, poti_roll_max, ADJ_ENDSWITCH_ROLL_RIGHT, counterRoll);
 
-    // print message to display for moving to all axes end
-    LcdPrintCalibrationAxesStart();
+  JOYSTICK_minY = poti_pitch_min;
+  JOYSTICK_maxY = poti_pitch_max;
+  JOYSTICK_minX = poti_roll_min;
+  JOYSTICK_maxX = poti_roll_max;
 
-    /* while (true) */
-    /* { */
-    /*   ReadMux(); */
-    /*   Serial.println(counterPitch.read()); */
-    /*   /1* Serial.println(iSensorPinStates & (1 << ADJ_ENDSWITCH_PITCH_DOWN)); *1/ */
-    /* } */
+  setRangeJoystick();
+  EnableMotors();
 
-    // do until all axes are received
-    while (poti_roll_min == -32768 || poti_roll_max == -32768 || poti_pitch_min == -32768 || poti_pitch_max == -32768)
-    {
-      // read end switches to detect changes
-      //ReadMux();
-      /* Serial.println(digitalRead(ADJ_BUTTON_CALIBRATION)); */
-      /* Serial.println(poti_pitch_min); */
-      /* Serial.println(counterPitch.read()); */
-      /* Serial.println(digitalRead(ADJ_BUTTON_CALIBRATION)); */
-      /* Serial.println(digitalRead(ADJ_ENDSWITCH_PITCH_DOWN)); */
-      /* delay(100); */
-      // if pitch down end switch is reached save value
-      if ((digitalRead(ADJ_ENDSWITCH_PITCH_DOWN) == LOW) && poti_pitch_min==-32768) {
-        poti_pitch_min = counterPitch.read();
-        LcdPrintCalibrationAxesUpdate(poti_roll_min, poti_roll_max, poti_pitch_max, poti_pitch_min);
-      }
-
-      // if pitch up end switch is reached save value
-      if ((digitalRead(ADJ_ENDSWITCH_PITCH_UP) == LOW) && poti_pitch_max==-32768) {
-        poti_pitch_max = counterPitch.read();
-        LcdPrintCalibrationAxesUpdate(poti_roll_min, poti_roll_max, poti_pitch_max, poti_pitch_min);
-      }
-
-      // if roll left end switch is reached save value
-      if ((digitalRead(ADJ_ENDSWITCH_ROLL_LEFT) == LOW) && poti_roll_min==-32768) {  //ir sensor
-        //Serial.println("left");
-        poti_roll_min = counterRoll.read();
-        LcdPrintCalibrationAxesUpdate(poti_roll_min, poti_roll_max, poti_pitch_max, poti_pitch_min);
-      }
-
-      // if roll right end switch is reached save value
-      if ((digitalRead(ADJ_ENDSWITCH_ROLL_RIGHT) == LOW) && poti_roll_max==-32768) {   // ir sensor
-        //Serial.println("right");
-        poti_roll_max = counterRoll.read();
-        LcdPrintCalibrationAxesUpdate(poti_roll_min, poti_roll_max, poti_pitch_max, poti_pitch_min);
-      }
-    } // while
-
-    // calculate max values for Joystick axes
-    // this uses the absolute values
-    // e.g. (-201) and (+200) means 201 for max valuev
-    // e.g. (-198) and (+200) means 200 for max value
-    int absoluteMaxPitch = max(abs(poti_pitch_min), abs(poti_pitch_max));
-    JOYSTICK_minY = -absoluteMaxPitch;
-    JOYSTICK_maxY = absoluteMaxPitch;
-
-    int absoluteMaxRoll = max(abs(poti_roll_min), abs(poti_roll_max));
-    JOYSTICK_minX = -absoluteMaxRoll;
-    JOYSTICK_maxX = absoluteMaxRoll;
-    // wait to give the user time so read the last value from display
-    /* delay(3000); */
-
-    // set the new Joystick range
-    setRangeJoystick();
-
-    // enable motors
-    EnableMotors();
-
-    // show adjustment values again
-    LcdPrintAdjustmendValues();
-
-  } // button not pressed
-} // CheckCalibrationMode
+}
 
 /******************************************
    Reads the button states over multiplexer

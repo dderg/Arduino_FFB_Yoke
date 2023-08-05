@@ -86,6 +86,9 @@ void setupDefaults(){
   adjForceMax[MEM_PITCH]=default_PITCH_FORCE_MAX;
   adjPwmMin[MEM_PITCH]=default_PITCH_PWM_MIN;
   adjPwmMax[MEM_PITCH]=default_PITCH_PWM_MAX;
+
+  effects[MEM_ROLL].springMaxPosition = max(JOYSTICK_maxX, abs(JOYSTICK_minX));
+  effects[MEM_PITCH].springMaxPosition = max(JOYSTICK_maxY, abs(JOYSTICK_minY));
 }
 
 void setRangeJoystick() {
@@ -100,8 +103,6 @@ void setGains() {
 void updateEffects(bool recalculate) {
   //If you need to use the spring effect, set the following parameters.`Position` is the current position of the force feedback axis.
   //For example, connect the encoder with the action axis,the current encoder value is `Positon` and the max encoder value is `MaxPosition`.
-  effects[MEM_ROLL].springMaxPosition = JOYSTICK_maxX;
-  effects[MEM_PITCH].springMaxPosition = JOYSTICK_maxY;
 
   effects[MEM_ROLL].springPosition = counterRoll.read();
   effects[MEM_PITCH].springPosition = counterPitch.read();
