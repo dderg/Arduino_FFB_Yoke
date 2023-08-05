@@ -288,10 +288,10 @@ void SerialProcessWriteCommand(int16_t cmd, int16_t value) {
 void CMD_READ_ALL_VALUES() {
 
   for (byte channel = 0; channel < 16; channel++) {
-    SerialWriteValue(iYokeButtonPinStates & (1 << channel));    // Index 0 - 15
+    /* SerialWriteValue(iYokeButtonPinStates & (1 << channel));    // Index 0 - 15 */
   }
   for (byte channel = 0; channel < 16; channel++) {
-    SerialWriteValue(iSensorPinStates & (1 << channel));        // Index 16 - 31
+    /* SerialWriteValue(iSensorPinStates & (1 << channel));        // Index 16 - 31 */
   }
 
   SerialWriteValue(JOYSTICK_minX);                              // 32

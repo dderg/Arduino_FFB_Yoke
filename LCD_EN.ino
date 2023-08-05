@@ -5,11 +5,15 @@
 *******************************************/
 void LcdPrintIntro() {
   lcd.setCursor(0, 0);
-  lcd.print(F("       Arduino      "));
-  lcd.print(F("Force-Feedback-Yoke "));
-  lcd.print(F("Created by GaGaGu   "));
-  lcd.print(F("                v1.3"));
+  lcd.print(F("Hi"));
 }
+
+void LcdPrintPosition() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(F("Pitch: "));
+  lcd.print(counterPitch.read());
+  }
 
 /******************************************
   show adjustment values (max force, pwm)
@@ -46,29 +50,14 @@ void LCDPrintDebugMode(){
   lcd.print(F("Debug Mode: On"));
 }
 
-#if defined(LANGUAGE_EN)
-  /******************************************
-    show calibration middle
-  *******************************************/
-  void LcdPrintCalibrationMiddleSensors(){
-    lcd.setCursor(0, 0);
-    lcd.print(F("Put all axes from   "));
-    lcd.print(F("one end to the other"));
-    lcd.print(F("to detect the middle"));
-    lcd.print(F("by sensor           "));
-  }
-#else
-  /******************************************
-    show calibration middle
-  *******************************************/
-  void LcdPrintCalibrationMiddle(){
-    lcd.setCursor(0, 0);
-    lcd.print(F("Put all axes in the "));
-    lcd.print(F("middle position and "));
-    lcd.print(F("press the calibratib"));
-    lcd.print(F("ration button       "));
-  }
-#endif
+/******************************************
+  show calibration middle
+ *******************************************/
+void LcdPrintCalibrationMiddle(){
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(F("prs btn to clbrt"));
+}
 
 /******************************************
   show calibration start

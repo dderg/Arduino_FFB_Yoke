@@ -11,12 +11,12 @@
 #define default_damperMaxVelocity_PITCH 350;
 
 #define default_PITCH_FORCE_MAX 10000;
-#define default_PITCH_PWM_MAX 150;
-#define default_PITCH_PWM_MIN 40;
+#define default_PITCH_PWM_MAX 100;
+#define default_PITCH_PWM_MIN 35;
 
 #define default_ROLL_FORCE_MAX 10000;
-#define default_ROLL_PWM_MAX 150;
-#define default_ROLL_PWM_MIN 40;
+#define default_ROLL_PWM_MAX 100;
+#define default_ROLL_PWM_MIN 35;
 
 // variables for calculation
 unsigned long lastEffectsUpdate = 0;    // count millis for next effect calculation
