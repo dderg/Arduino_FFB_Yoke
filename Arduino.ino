@@ -205,8 +205,8 @@ void CheckCalibrationMode() {
   DisableMotors();
 
 
-  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, false, poti_pitch_min, ADJ_ENDSWITCH_PITCH_DOWN, counterPitch);
-  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, true, poti_pitch_max, ADJ_ENDSWITCH_PITCH_UP, counterPitch);
+  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, true, poti_pitch_min, ADJ_ENDSWITCH_PITCH_DOWN, counterPitch);
+  CalibrateAxisOneDirection(PITCH_L_PWM, PITCH_R_PWM, false, poti_pitch_max, ADJ_ENDSWITCH_PITCH_UP, counterPitch);
   CalibrateAxisOneDirection(ROLL_L_PWM, ROLL_R_PWM, true, poti_roll_min, ADJ_ENDSWITCH_ROLL_LEFT, counterRoll);
   CalibrateAxisOneDirection(ROLL_L_PWM, ROLL_R_PWM, false, poti_roll_max, ADJ_ENDSWITCH_ROLL_RIGHT, counterRoll);
 
