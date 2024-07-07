@@ -29,6 +29,7 @@
 #define ADJ_ENDSWITCH_ROLL_LEFT 20 
 #define ADJ_ENDSWITCH_ROLL_RIGHT 21
 
+
 // If you use center sensor use 
 // RES_1 connector for Roll Roll Sensor
 // RES_2 connector for Pitch Sensor
@@ -74,10 +75,10 @@ void ArduinoSetup()
   // This sets the PWM Speed to maximun for noise reduction
 
   // Timer1: pins 9 & 10
-  TCCR1B = _BV(CS10); // change the PWM frequencey to 31.25kHz - pins 9 & 10
+  // TCCR1B = _BV(CS10); // change the PWM frequencey to 31.25kHz - pins 9 & 10
 
   // Timer4: pin 13 & 6
-  TCCR4B = _BV(CS40); // change the PWM frequencey to 31.25kHz - pin 13 & 6
+  // TCCR4B = _BV(CS40); // change the PWM frequencey to 31.25kHz - pin 13 & 6
 } //ArduinoSetup
 
 /**************************

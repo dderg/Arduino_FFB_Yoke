@@ -8,8 +8,8 @@
 
 
 #include "src/Joystick.h"   // Joystick and FFB Library (many changes made) by https://github.com/jmriego/Fino
+#include "Encoder/Encoder.h"        // Encoder Library https://github.com/PaulStoffregen/Encoder
 
-#include <Encoder.h>        // Encoder Library https://github.com/PaulStoffregen/Encoder
 #include <EEPROM.h>         // https://docs.arduino.cc/learn/built-in-libraries/eeprom
 
 #ifdef _VARIANT_ARDUINO_DUE_X_  // Due uses SerialUSB for Communication
